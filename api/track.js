@@ -4,7 +4,11 @@ export default async function handler(req, res) {
   const primurl = req.query.primurl || "";
 
   const forwarded = req.headers["x-forwarded-for"] || "";
-  const ip = forwarded.split(",")[0].trim() || req.socket?.remoteAddress || "desconhecido";
+  const ip =
+    forwarded.split(",")[0].trim() ||
+    req.socket?.remoteAddress ||
+    "desconhecido";
+
   const navegador = req.headers["user-agent"] || "desconhecido";
 
   if (primurl) {
