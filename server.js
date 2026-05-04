@@ -2,29 +2,16 @@ const express = require("express");
 const app = express();
 
 const PORT = process.env.PORT || 10000;
-const sessions = new Map();
 
 app.get("/", (req, res) => {
   res.send("Servidor online.");
 });
 
-app.get("/create", (req, res) => {
-  const t = req.query.t || "";
+app.get("/pixel", async (req, res) => {
+  const token = req.query.t || "";
   const avatar = req.query.avatar || "";
   const nome = req.query.nome || "";
   const primurl = req.query.primurl || "";
-
-  if (!t || !avatar || !primurl) {
-    return res.status(400).send("ERROR");
-  }
-
-  sessions.set(t, { avatar, nome, primurl });
-  res.send("OK");
-});
-
-app.get("/pixel", async (req, res) => {
-  const t = req.query.t || "";
-  const s = sessions.get(t);
 
   const forwarded = req.headers["x-forwarded-for"] || "";
   const ip =
@@ -34,21 +21,22 @@ app.get("/pixel", async (req, res) => {
 
   const navegador = req.headers["user-agent"] || "desconhecido";
 
-  if (s) {
+  if (primurl) {
     const retorno =
-      s.primurl +
+      primurl +
       "?acao=retorno" +
-      "&avatar=" + encodeURIComponent(s.avatar) +
-      "&nome=" + encodeURIComponent(s.nome) +
+      "&token=" + encodeURIComponent(token) +
+      "&avatar=" + encodeURIComponent(avatar) +
+      "&nome=" + encodeURIComponent(nome) +
       "&ip=" + encodeURIComponent(ip) +
-      "&navegador=" + encodeURIComponent(navegador) +
-      "&token=" + encodeURIComponent(t);
+      "&navegador=" + encodeURIComponent(navegador);
 
     try {
       await fetch(retorno);
-    } catch (e) {}
-
-    sessions.delete(t);
+      console.log("Retorno enviado:", nome, ip);
+    } catch (e) {
+      console.log("Erro ao retornar ao prim:", e.message);
+    }
   }
 
   const pixel = Buffer.from(
@@ -62,5 +50,5 @@ app.get("/pixel", async (req, res) => {
 });
 
 app.listen(PORT, "0.0.0.0", () => {
-  console.log("Servidor rodando");
+  console.log("Servidor rodando na porta " + PORT);
 });
