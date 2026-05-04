@@ -2,9 +2,7 @@ const express = require("express");
 const app = express();
 
 const PORT = process.env.PORT || 10000;
-
 const sessions = new Map();
-const seenIPs = new Map();
 
 app.get("/", (req, res) => {
   res.send("Servidor online.");
@@ -20,13 +18,7 @@ app.get("/create", (req, res) => {
     return res.status(400).send("ERROR");
   }
 
-  sessions.set(t, {
-    avatar,
-    nome,
-    primurl,
-    createdAt: Date.now()
-  });
-
+  sessions.set(t, { avatar, nome, primurl });
   res.send("OK");
 });
 
@@ -42,16 +34,6 @@ app.get("/pixel", async (req, res) => {
 
   const navegador = req.headers["user-agent"] || "desconhecido";
 
-  let status = "NOVO";
-  let antigo = "";
-
-  if (seenIPs.has(ip)) {
-    status = "POSSIVEL_ALT";
-    antigo = seenIPs.get(ip);
-  } else {
-    seenIPs.set(ip, s ? s.nome : "desconhecido");
-  }
-
   if (s) {
     const retorno =
       s.primurl +
@@ -60,8 +42,7 @@ app.get("/pixel", async (req, res) => {
       "&nome=" + encodeURIComponent(s.nome) +
       "&ip=" + encodeURIComponent(ip) +
       "&navegador=" + encodeURIComponent(navegador) +
-      "&status=" + encodeURIComponent(status) +
-      "&antigo=" + encodeURIComponent(antigo);
+      "&token=" + encodeURIComponent(t);
 
     try {
       await fetch(retorno);
