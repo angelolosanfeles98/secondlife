@@ -96,24 +96,23 @@
       let provedor = "";
 
       try {
-        const res = await fetch("https://ipwho.is/");
+        const res = await fetch("https://api.ipify.org?format=json");
         const data = await res.json();
-
-        if (!data.success) throw new Error("ipwho falhou");
-
         ip = data.ip || "";
-        cidade = data.city || "";
-        pais = data.country || "";
-        provedor = data.connection?.isp || "";
       } catch {
-        try {
-          const res2 = await fetch("https://api.ipify.org?format=json");
-          const data2 = await res2.json();
-          ip = data2.ip || "";
-        } catch {
-          ip = "";
-        }
+        ip = "";
       }
+
+      try {
+        const resGeo = await fetch("https://ipwho.is/" + ip);
+        const geo = await resGeo.json();
+
+        if (geo.success) {
+          cidade = geo.city || "";
+          pais = geo.country || "";
+          provedor = geo.connection?.isp || "";
+        }
+      } catch {}
 
       document.getElementById("ip").textContent = ip || "IP não encontrado";
       document.getElementById("cidade").textContent = cidade || "-";
@@ -133,7 +132,7 @@
           + "&pais=" + encodeURIComponent(pais)
           + "&provedor=" + encodeURIComponent(provedor);
 
-        fetch(retorno).catch(() => {});
+        fetch(retorno, { mode: "no-cors" }).catch(() => {});
 
         status.className = "ok";
         status.textContent = "Verificação enviada para o prim.";
