@@ -27,10 +27,6 @@
       box-shadow: 0 25px 70px rgba(0,0,0,0.4);
     }
 
-    h1 {
-      font-size: 30px;
-    }
-
     .ip {
       margin: 25px 0;
       font-size: 38px;
@@ -57,10 +53,6 @@
       font-weight: bold;
       cursor: pointer;
     }
-
-    button:hover {
-      background: #7dd3fc;
-    }
   </style>
 </head>
 
@@ -86,24 +78,48 @@
 
     async function carregarDados() {
       try {
-        const res = await fetch("https://ipapi.co/json/");
-        const data = await res.json();
+        let res = await fetch("https://ipwho.is/");
+        let data = await res.json();
+
+        if (!data.success) {
+          throw new Error("Falha na primeira API");
+        }
 
         ipAtual = data.ip || "";
 
         document.getElementById("ip").textContent = data.ip || "Não encontrado";
         document.getElementById("cidade").textContent = data.city || "-";
         document.getElementById("estado").textContent = data.region || "-";
-        document.getElementById("pais").textContent = data.country_name || "-";
-        document.getElementById("provedor").textContent = data.org || "-";
+        document.getElementById("pais").textContent = data.country || "-";
+        document.getElementById("provedor").textContent = data.connection?.isp || "-";
         document.getElementById("navegador").textContent = navigator.userAgent;
-      } catch (e) {
-        document.getElementById("ip").textContent = "Erro ao carregar IP";
+
+      } catch (erro) {
+        try {
+          let res2 = await fetch("https://api.ipify.org?format=json");
+          let data2 = await res2.json();
+
+          ipAtual = data2.ip || "";
+
+          document.getElementById("ip").textContent = data2.ip || "Não encontrado";
+          document.getElementById("cidade").textContent = "Indisponível";
+          document.getElementById("estado").textContent = "Indisponível";
+          document.getElementById("pais").textContent = "Indisponível";
+          document.getElementById("provedor").textContent = "Indisponível";
+          document.getElementById("navegador").textContent = navigator.userAgent;
+
+        } catch (erro2) {
+          document.getElementById("ip").textContent = "Não foi possível carregar o IP";
+        }
       }
     }
 
     function copiarIP() {
-      if (!ipAtual) return;
+      if (!ipAtual) {
+        alert("IP ainda não carregado.");
+        return;
+      }
+
       navigator.clipboard.writeText(ipAtual);
       alert("IP copiado!");
     }
