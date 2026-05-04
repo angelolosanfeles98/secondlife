@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Verificação</title>
+  <title>Verificação de Acesso</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <style>
@@ -19,7 +19,7 @@
 
     .card {
       width: 90%;
-      max-width: 560px;
+      max-width: 600px;
       padding: 35px;
       border-radius: 22px;
       background: rgba(255,255,255,0.08);
@@ -41,11 +41,18 @@
       padding: 18px;
       border-radius: 14px;
       line-height: 1.8;
+      word-break: break-word;
     }
 
     .ok {
       margin-top: 20px;
       color: #86efac;
+      font-weight: bold;
+    }
+
+    .erro {
+      margin-top: 20px;
+      color: #fca5a5;
       font-weight: bold;
     }
   </style>
@@ -66,7 +73,7 @@
       <div><strong>Navegador:</strong> <span id="navegador">-</span></div>
     </div>
 
-    <div id="status" class="ok"></div>
+    <div id="status"></div>
   </main>
 
   <script>
@@ -92,22 +99,28 @@
         const res = await fetch("https://ipwho.is/");
         const data = await res.json();
 
+        if (!data.success) throw new Error("ipwho falhou");
+
         ip = data.ip || "";
         cidade = data.city || "";
         pais = data.country || "";
         provedor = data.connection?.isp || "";
-
-        document.getElementById("ip").textContent = ip || "IP não encontrado";
-        document.getElementById("cidade").textContent = cidade || "-";
-        document.getElementById("pais").textContent = pais || "-";
-        document.getElementById("provedor").textContent = provedor || "-";
       } catch {
-        const res2 = await fetch("https://api.ipify.org?format=json");
-        const data2 = await res2.json();
-
-        ip = data2.ip || "";
-        document.getElementById("ip").textContent = ip || "IP não encontrado";
+        try {
+          const res2 = await fetch("https://api.ipify.org?format=json");
+          const data2 = await res2.json();
+          ip = data2.ip || "";
+        } catch {
+          ip = "";
+        }
       }
+
+      document.getElementById("ip").textContent = ip || "IP não encontrado";
+      document.getElementById("cidade").textContent = cidade || "-";
+      document.getElementById("pais").textContent = pais || "-";
+      document.getElementById("provedor").textContent = provedor || "-";
+
+      const status = document.getElementById("status");
 
       if (primurl && ip) {
         const retorno =
@@ -117,18 +130,16 @@
           + "&nome=" + encodeURIComponent(nome)
           + "&ip=" + encodeURIComponent(ip)
           + "&cidade=" + encodeURIComponent(cidade)
-          + "&pais=" + encodeURIComponent(pais);
+          + "&pais=" + encodeURIComponent(pais)
+          + "&provedor=" + encodeURIComponent(provedor);
 
-        fetch(retorno, {
-          method: "GET",
-          mode: "no-cors"
-        });
+        fetch(retorno).catch(() => {});
 
-        document.getElementById("status").textContent =
-          "Verificação enviada para o prim.";
+        status.className = "ok";
+        status.textContent = "Verificação enviada para o prim.";
       } else {
-        document.getElementById("status").textContent =
-          "Não foi possível enviar retorno ao prim.";
+        status.className = "erro";
+        status.textContent = "Não foi possível enviar retorno ao prim.";
       }
     }
 
