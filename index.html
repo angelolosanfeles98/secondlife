@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Meu IP</title>
+
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #08111f, #16243a);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .card {
+      width: 90%;
+      max-width: 520px;
+      padding: 35px;
+      border-radius: 22px;
+      text-align: center;
+      background: rgba(255,255,255,0.08);
+      box-shadow: 0 25px 70px rgba(0,0,0,0.4);
+    }
+
+    h1 {
+      font-size: 30px;
+    }
+
+    .ip {
+      margin: 25px 0;
+      font-size: 38px;
+      font-weight: bold;
+      color: #38bdf8;
+      word-break: break-all;
+    }
+
+    .info {
+      text-align: left;
+      background: rgba(255,255,255,0.08);
+      padding: 18px;
+      border-radius: 14px;
+      line-height: 1.8;
+    }
+
+    button {
+      margin-top: 22px;
+      padding: 13px 26px;
+      border: none;
+      border-radius: 999px;
+      background: #38bdf8;
+      color: #020617;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #7dd3fc;
+    }
+  </style>
+</head>
+
+<body>
+  <main class="card">
+    <h1>Seu IP</h1>
+
+    <div id="ip" class="ip">Carregando...</div>
+
+    <div class="info">
+      <div><strong>Cidade:</strong> <span id="cidade">-</span></div>
+      <div><strong>Estado:</strong> <span id="estado">-</span></div>
+      <div><strong>País:</strong> <span id="pais">-</span></div>
+      <div><strong>Provedor:</strong> <span id="provedor">-</span></div>
+      <div><strong>Navegador:</strong> <span id="navegador">-</span></div>
+    </div>
+
+    <button onclick="copiarIP()">Copiar IP</button>
+  </main>
+
+  <script>
+    let ipAtual = "";
+
+    async function carregarDados() {
+      try {
+        const res = await fetch("https://ipapi.co/json/");
+        const data = await res.json();
+
+        ipAtual = data.ip || "";
+
+        document.getElementById("ip").textContent = data.ip || "Não encontrado";
+        document.getElementById("cidade").textContent = data.city || "-";
+        document.getElementById("estado").textContent = data.region || "-";
+        document.getElementById("pais").textContent = data.country_name || "-";
+        document.getElementById("provedor").textContent = data.org || "-";
+        document.getElementById("navegador").textContent = navigator.userAgent;
+      } catch (e) {
+        document.getElementById("ip").textContent = "Erro ao carregar IP";
+      }
+    }
+
+    function copiarIP() {
+      if (!ipAtual) return;
+      navigator.clipboard.writeText(ipAtual);
+      alert("IP copiado!");
+    }
+
+    carregarDados();
+  </script>
+</body>
+</html>
