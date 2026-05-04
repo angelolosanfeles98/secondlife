@@ -2,54 +2,55 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
+  <title>Verificação</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Meu IP</title>
 
   <style>
     body {
       margin: 0;
-      min-height: 100vh;
-      font-family: Arial, sans-serif;
-      background: linear-gradient(135deg, #08111f, #16243a);
+      font-family: Arial;
+      background: linear-gradient(135deg, #0a0f1f, #1c2a44);
       color: white;
       display: flex;
       align-items: center;
       justify-content: center;
+      min-height: 100vh;
     }
 
     .card {
-      width: 90%;
-      max-width: 520px;
-      padding: 35px;
-      border-radius: 22px;
-      text-align: center;
       background: rgba(255,255,255,0.08);
-      box-shadow: 0 25px 70px rgba(0,0,0,0.4);
+      padding: 35px;
+      border-radius: 20px;
+      width: 90%;
+      max-width: 550px;
+      box-shadow: 0 25px 80px rgba(0,0,0,0.5);
+    }
+
+    h1 {
+      text-align: center;
     }
 
     .ip {
-      margin: 25px 0;
-      font-size: 38px;
-      font-weight: bold;
+      font-size: 36px;
       color: #38bdf8;
-      word-break: break-all;
+      text-align: center;
+      margin: 20px 0;
     }
 
     .info {
-      text-align: left;
       background: rgba(255,255,255,0.08);
-      padding: 18px;
-      border-radius: 14px;
+      padding: 15px;
+      border-radius: 12px;
       line-height: 1.8;
     }
 
     button {
-      margin-top: 22px;
-      padding: 13px 26px;
+      margin-top: 20px;
+      width: 100%;
+      padding: 12px;
       border: none;
       border-radius: 999px;
       background: #38bdf8;
-      color: #020617;
       font-weight: bold;
       cursor: pointer;
     }
@@ -57,74 +58,66 @@
 </head>
 
 <body>
-  <main class="card">
-    <h1>Seu IP</h1>
+  <div class="card">
+    <h1>Verificação de Acesso</h1>
 
-    <div id="ip" class="ip">Carregando...</div>
+    <div class="ip" id="ip">Carregando IP...</div>
 
     <div class="info">
+      <div><strong>Nome:</strong> <span id="nome">-</span></div>
+      <div><strong>UUID:</strong> <span id="avatar">-</span></div>
       <div><strong>Cidade:</strong> <span id="cidade">-</span></div>
-      <div><strong>Estado:</strong> <span id="estado">-</span></div>
       <div><strong>País:</strong> <span id="pais">-</span></div>
       <div><strong>Provedor:</strong> <span id="provedor">-</span></div>
       <div><strong>Navegador:</strong> <span id="navegador">-</span></div>
     </div>
 
     <button onclick="copiarIP()">Copiar IP</button>
-  </main>
+  </div>
 
   <script>
     let ipAtual = "";
 
-    async function carregarDados() {
+    function getParam(nome) {
+      return new URLSearchParams(window.location.search).get(nome) || "-";
+    }
+
+    async function carregar() {
+      document.getElementById("nome").textContent = getParam("nome");
+      document.getElementById("avatar").textContent = getParam("avatar");
+
       try {
-        let res = await fetch("https://ipwho.is/");
-        let data = await res.json();
+        const res = await fetch("https://ipwho.is/");
+        const data = await res.json();
 
-        if (!data.success) {
-          throw new Error("Falha na primeira API");
-        }
+        ipAtual = data.ip;
 
-        ipAtual = data.ip || "";
-
-        document.getElementById("ip").textContent = data.ip || "Não encontrado";
-        document.getElementById("cidade").textContent = data.city || "-";
-        document.getElementById("estado").textContent = data.region || "-";
-        document.getElementById("pais").textContent = data.country || "-";
-        document.getElementById("provedor").textContent = data.connection?.isp || "-";
-        document.getElementById("navegador").textContent = navigator.userAgent;
-
-      } catch (erro) {
+        document.getElementById("ip").textContent = data.ip;
+        document.getElementById("cidade").textContent = data.city;
+        document.getElementById("pais").textContent = data.country;
+        document.getElementById("provedor").textContent = data.connection.isp;
+      } catch {
         try {
-          let res2 = await fetch("https://api.ipify.org?format=json");
-          let data2 = await res2.json();
+          const res2 = await fetch("https://api.ipify.org?format=json");
+          const data2 = await res2.json();
 
-          ipAtual = data2.ip || "";
-
-          document.getElementById("ip").textContent = data2.ip || "Não encontrado";
-          document.getElementById("cidade").textContent = "Indisponível";
-          document.getElementById("estado").textContent = "Indisponível";
-          document.getElementById("pais").textContent = "Indisponível";
-          document.getElementById("provedor").textContent = "Indisponível";
-          document.getElementById("navegador").textContent = navigator.userAgent;
-
-        } catch (erro2) {
-          document.getElementById("ip").textContent = "Não foi possível carregar o IP";
+          ipAtual = data2.ip;
+          document.getElementById("ip").textContent = data2.ip;
+        } catch {
+          document.getElementById("ip").textContent = "Erro ao carregar";
         }
       }
+
+      document.getElementById("navegador").textContent = navigator.userAgent;
     }
 
     function copiarIP() {
-      if (!ipAtual) {
-        alert("IP ainda não carregado.");
-        return;
-      }
-
+      if (!ipAtual) return alert("IP não carregado");
       navigator.clipboard.writeText(ipAtual);
       alert("IP copiado!");
     }
 
-    carregarDados();
+    carregar();
   </script>
 </body>
 </html>
