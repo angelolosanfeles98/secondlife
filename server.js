@@ -4,30 +4,34 @@ const app = express();
 const PORT = process.env.PORT || 10000;
 
 const sessions = new Map();
+const seenIPs = new Map();
+
+app.get("/", (req, res) => {
+  res.send("Servidor online.");
+});
 
 app.get("/create", (req, res) => {
-  const t = req.query.t;
-  const avatar = req.query.avatar;
-  const nome = req.query.nome;
-  const primurl = req.query.primurl;
+  const t = req.query.t || "";
+  const avatar = req.query.avatar || "";
+  const nome = req.query.nome || "";
+  const primurl = req.query.primurl || "";
 
-  if (!t || !primurl) {
+  if (!t || !avatar || !primurl) {
     return res.status(400).send("ERROR");
   }
 
   sessions.set(t, {
     avatar,
     nome,
-    primurl
+    primurl,
+    createdAt: Date.now()
   });
-
-  console.log("Sessão criada:", t);
 
   res.send("OK");
 });
 
 app.get("/pixel", async (req, res) => {
-  const t = req.query.t;
+  const t = req.query.t || "";
   const s = sessions.get(t);
 
   const forwarded = req.headers["x-forwarded-for"] || "";
@@ -36,7 +40,17 @@ app.get("/pixel", async (req, res) => {
     req.socket.remoteAddress ||
     "desconhecido";
 
-  const navegador = req.headers["user-agent"] || "";
+  const navegador = req.headers["user-agent"] || "desconhecido";
+
+  let status = "NOVO";
+  let antigo = "";
+
+  if (seenIPs.has(ip)) {
+    status = "POSSIVEL_ALT";
+    antigo = seenIPs.get(ip);
+  } else {
+    seenIPs.set(ip, s ? s.nome : "desconhecido");
+  }
 
   if (s) {
     const retorno =
@@ -45,14 +59,13 @@ app.get("/pixel", async (req, res) => {
       "&avatar=" + encodeURIComponent(s.avatar) +
       "&nome=" + encodeURIComponent(s.nome) +
       "&ip=" + encodeURIComponent(ip) +
-      "&navegador=" + encodeURIComponent(navegador);
+      "&navegador=" + encodeURIComponent(navegador) +
+      "&status=" + encodeURIComponent(status) +
+      "&antigo=" + encodeURIComponent(antigo);
 
     try {
       await fetch(retorno);
-      console.log("IP enviado:", ip);
-    } catch (e) {
-      console.log("Erro:", e.message);
-    }
+    } catch (e) {}
 
     sessions.delete(t);
   }
@@ -63,6 +76,7 @@ app.get("/pixel", async (req, res) => {
   );
 
   res.setHeader("Content-Type", "image/gif");
+  res.setHeader("Cache-Control", "no-store");
   res.end(pixel);
 });
 
