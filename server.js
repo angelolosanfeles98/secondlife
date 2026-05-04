@@ -6,10 +6,10 @@ const PORT = process.env.PORT || 10000;
 const sessions = new Map();
 
 app.get("/create", (req, res) => {
-  const t = req.query.t || "";
-  const avatar = req.query.avatar || "";
-  const nome = req.query.nome || "";
-  const primurl = req.query.primurl || "";
+  const t = req.query.t;
+  const avatar = req.query.avatar;
+  const nome = req.query.nome;
+  const primurl = req.query.primurl;
 
   if (!t || !primurl) {
     return res.status(400).send("ERROR");
@@ -21,13 +21,13 @@ app.get("/create", (req, res) => {
     primurl
   });
 
-  console.log("Sessão criada:", t, nome);
+  console.log("Sessão criada:", t);
 
   res.send("OK");
 });
 
 app.get("/pixel", async (req, res) => {
-  const t = req.query.t || "";
+  const t = req.query.t;
   const s = sessions.get(t);
 
   const forwarded = req.headers["x-forwarded-for"] || "";
@@ -36,21 +36,20 @@ app.get("/pixel", async (req, res) => {
     req.socket.remoteAddress ||
     "desconhecido";
 
-  const navegador = req.headers["user-agent"] || "desconhecido";
+  const navegador = req.headers["user-agent"] || "";
 
   if (s) {
     const retorno =
       s.primurl +
-      "?acao=retorno"
-      + "&avatar=" + encodeURIComponent(s.avatar)
-      + "&nome=" + encodeURIComponent(s.nome)
-      + "&ip=" + encodeURIComponent(ip)
-      + "&navegador=" + encodeURIComponent(navegador)
-      + "&token=" + encodeURIComponent(t);
+      "?acao=retorno" +
+      "&avatar=" + encodeURIComponent(s.avatar) +
+      "&nome=" + encodeURIComponent(s.nome) +
+      "&ip=" + encodeURIComponent(ip) +
+      "&navegador=" + encodeURIComponent(navegador);
 
     try {
       await fetch(retorno);
-      console.log("Retorno enviado:", s.nome, ip);
+      console.log("IP enviado:", ip);
     } catch (e) {
       console.log("Erro:", e.message);
     }
@@ -64,7 +63,6 @@ app.get("/pixel", async (req, res) => {
   );
 
   res.setHeader("Content-Type", "image/gif");
-  res.setHeader("Cache-Control", "no-store");
   res.end(pixel);
 });
 
